@@ -21,27 +21,7 @@ export async function buildHtmlFromComponents(
       font-family: ${settings.fontFamily};
     }
     
-    /* Container */
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1rem;
-    }
-    
-    /* Basic utility classes */
-    .text-center { text-align: center; }
-    .mb-4 { margin-bottom: 1rem; }
-    .mb-8 { margin-bottom: 2rem; }
-    .py-12 { padding-top: 3rem; padding-bottom: 3rem; }
-    
-    /* Custom styling */
-    :root {
-      --primary-color: ${settings.primaryColor};
-      --secondary-color: ${settings.secondaryColor};
-    }
-    
-    /* Button styling */
+    /* Additional utility classes */
     .btn {
       display: inline-block;
       padding: 0.75rem 1.5rem;
@@ -57,25 +37,44 @@ export async function buildHtmlFromComponents(
       opacity: 0.9;
     }
     
-    /* Responsive grid */
-    .grid {
-      display: grid;
-      gap: 1.5rem;
+    /* Custom spacing utilities */
+    .py-12 {
+      padding-top: 3rem;
+      padding-bottom: 3rem;
     }
     
-    @media (min-width: 768px) {
-      .grid-cols-2 {
-        grid-template-columns: repeat(2, 1fr);
-      }
+    .mb-4 {
+      margin-bottom: 1rem;
     }
     
-    @media (min-width: 1024px) {
-      .grid-cols-3 {
-        grid-template-columns: repeat(3, 1fr);
+    .mb-8 {
+      margin-bottom: 2rem;
+    }
+    
+    /* Responsive fixes */
+    @media (max-width: 768px) {
+      .md\:flex-row {
+        flex-direction: column !important;
       }
       
-      .grid-cols-4 {
-        grid-template-columns: repeat(4, 1fr);
+      .md\:grid-cols-2 {
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+      }
+    }
+    
+    @media (max-width: 1024px) {
+      .lg\:grid-cols-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+    }
+    
+    @media (max-width: 640px) {
+      h1 {
+        font-size: 2rem !important;
+      }
+      
+      h2 {
+        font-size: 1.5rem !important;
       }
     }
   `;
@@ -114,9 +113,67 @@ export async function buildHtmlFromComponents(
   <title>${settings.title}</title>
   <meta name="description" content="${settings.description}">
   <link rel="icon" href="favicon.ico">
+  <!-- Include Tailwind CSS via jsdelivr CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Set CSS custom properties for theme colors -->
+  <style>
+    :root {
+      --primary-color: ${settings.primaryColor};
+      --secondary-color: ${settings.secondaryColor};
+    }
+    
+    body {
+      font-family: ${settings.fontFamily || 'system-ui, sans-serif'};
+    }
+    
+    .bg-primary {
+      background-color: var(--primary-color);
+    }
+    
+    .bg-secondary {
+      background-color: var(--secondary-color);
+    }
+    
+    .text-primary {
+      color: var(--primary-color);
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    
+    @media (min-width: 640px) {
+      .container {
+        max-width: 640px;
+      }
+    }
+    
+    @media (min-width: 768px) {
+      .container {
+        max-width: 768px;
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .container {
+        max-width: 1024px;
+      }
+    }
+    
+    @media (min-width: 1280px) {
+      .container {
+        max-width: 1280px;
+      }
+    }
+  </style>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="antialiased text-gray-800">
   ${componentsHtml}
 </body>
 </html>
@@ -163,11 +220,11 @@ function renderSimpleNavbar({ logo = 'WebCraft', links = 'Home, About, Services,
   
   return `
 <nav class="py-4">
-  <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div style="font-size: 1.25rem; font-weight: bold;">${logo}</div>
-      <div style="display: flex; gap: 1.5rem;">
-        ${linkArray.map(link => `<a href="#" style="text-decoration: none;">${link}</a>`).join('')}
+  <div class="container mx-auto px-4">
+    <div class="flex justify-between items-center">
+      <div class="text-xl font-bold">${logo}</div>
+      <div class="flex gap-6">
+        ${linkArray.map(link => `<a href="#" class="hover:opacity-70 transition-opacity">${link}</a>`).join('')}
       </div>
     </div>
   </div>
@@ -180,12 +237,12 @@ function renderHeroNavbar({ logo = 'WebCraft', links = 'Home, About, Services, C
   
   return `
 <nav class="py-4">
-  <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div style="font-size: 1.25rem; font-weight: bold;">${logo}</div>
-      <div style="display: flex; align-items: center; gap: 1.5rem;">
-        ${linkArray.map(link => `<a href="#" style="text-decoration: none;">${link}</a>`).join('')}
-        <a href="#" class="btn">${ctaText}</a>
+  <div class="container mx-auto px-4">
+    <div class="flex justify-between items-center">
+      <div class="text-xl font-bold">${logo}</div>
+      <div class="flex items-center gap-6">
+        ${linkArray.map(link => `<a href="#" class="hover:opacity-70 transition-opacity">${link}</a>`).join('')}
+        <a href="#" class="px-4 py-2 bg-primary text-white rounded hover:opacity-90 transition-opacity">${ctaText}</a>
       </div>
     </div>
   </div>
@@ -195,12 +252,12 @@ function renderHeroNavbar({ logo = 'WebCraft', links = 'Home, About, Services, C
 
 function renderSimpleHero({ heading = 'Welcome to our website', subheading = 'A modern platform for your business needs', ctaText = 'Get Started', backgroundImage = 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg' }) {
   return `
-<div style="position: relative; height: 500px; display: flex; align-items: center; justify-content: center; text-align: center; background-image: url('${backgroundImage}'); background-size: cover; background-position: center;">
-  <div style="position: absolute; inset: 0; background-color: black; opacity: 0.5;"></div>
-  <div style="position: relative; z-index: 10; max-width: 1200px; margin: 0 auto; padding: 0 1rem; color: white;">
-    <h1 style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1rem;">${heading}</h1>
-    <p style="font-size: 1.25rem; margin-bottom: 2rem; max-width: 42rem; margin-left: auto; margin-right: auto;">${subheading}</p>
-    <a href="#" class="btn">${ctaText}</a>
+<div class="relative h-[500px] flex items-center justify-center text-center bg-cover bg-center" style="background-image: url('${backgroundImage}')">
+  <div class="absolute inset-0 bg-black opacity-50"></div>
+  <div class="relative z-10 container mx-auto px-4 text-white">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4">${heading}</h1>
+    <p class="text-xl mb-8 max-w-2xl mx-auto">${subheading}</p>
+    <a href="#" class="px-6 py-3 bg-primary text-white rounded hover:opacity-90 transition-opacity">${ctaText}</a>
   </div>
 </div>
   `;
@@ -208,15 +265,15 @@ function renderSimpleHero({ heading = 'Welcome to our website', subheading = 'A 
 
 function renderSplitHero({ heading = 'Build your next project with us', content = 'We provide the tools and expertise to help your business succeed in the digital world.', ctaText = 'Learn More', image = 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg' }) {
   return `
-<div class="container py-12">
-  <div style="display: flex; flex-direction: column; gap: 2rem;">
-    <div style="flex: 1;">
-      <h1 style="font-size: 2.25rem; font-weight: bold; margin-bottom: 1rem;">${heading}</h1>
-      <p style="font-size: 1.125rem; margin-bottom: 1.5rem;">${content}</p>
-      <a href="#" class="btn">${ctaText}</a>
+<div class="container mx-auto px-4 py-12">
+  <div class="flex flex-col md:flex-row gap-8">
+    <div class="flex-1">
+      <h1 class="text-3xl md:text-4xl font-bold mb-4">${heading}</h1>
+      <p class="text-lg mb-6">${content}</p>
+      <a href="#" class="px-6 py-3 bg-primary text-white rounded hover:opacity-90 transition-opacity">${ctaText}</a>
     </div>
-    <div style="flex: 1;">
-      <img src="${image}" alt="Hero" style="border-radius: 0.5rem; width: 100%; height: auto; object-fit: cover;">
+    <div class="flex-1">
+      <img src="${image}" alt="Hero" class="rounded-lg w-full h-auto object-cover">
     </div>
   </div>
 </div>
@@ -225,10 +282,10 @@ function renderSplitHero({ heading = 'Build your next project with us', content 
 
 function renderTextBlock({ heading = 'Our Mission', content = 'We are dedicated to providing the best service and solutions for our clients. Our team of experts works tirelessly to ensure your satisfaction and success.' }) {
   return `
-<div class="container py-12">
-  <div style="max-width: 48rem; margin-left: auto; margin-right: auto;">
-    <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">${heading}</h2>
-    <div style="font-size: 1.125rem;">
+<div class="container mx-auto px-4 py-12">
+  <div class="max-w-3xl mx-auto">
+    <h2 class="text-3xl font-bold mb-4">${heading}</h2>
+    <div class="text-lg">
       <p>${content}</p>
     </div>
   </div>
@@ -237,43 +294,41 @@ function renderTextBlock({ heading = 'Our Mission', content = 'We are dedicated 
 }
 
 function renderFeatures({ heading = 'Our Features', subheading = 'Discover what makes our product special', features = '[{"title":"Fast Performance","description":"Our platform is optimized for speed and efficiency."},{"title":"Easy to Use","description":"Intuitive interface designed for users of all skill levels."},{"title":"Responsive Design","description":"Works perfectly on all devices and screen sizes."},{"title":"24/7 Support","description":"Our team is always available to help with any issues."}]' }) {
+  // Parse features data
+  let featuresArray = [];
+  try {
+    if (typeof features === 'string') {
+      featuresArray = JSON.parse(features);
+    } else if (Array.isArray(features)) {
+      featuresArray = features;
+    }
+  } catch (error) {
+    console.error('Invalid features JSON');
+    featuresArray = [
+      {title: "Fast Performance", description: "Our platform is optimized for speed and efficiency."},
+      {title: "Easy to Use", description: "Intuitive interface designed for users of all skill levels."},
+      {title: "Responsive Design", description: "Works perfectly on all devices and screen sizes."},
+      {title: "24/7 Support", description: "Our team is always available to help with any issues."}
+    ];
+  }
+  
+  // Generate feature items HTML
+  const featuresHtml = featuresArray.map((feature: { title: string; description: string }) => `
+    <div class="p-6 border border-gray-200 rounded-lg">
+      <h3 class="text-xl font-semibold mb-3">${feature.title}</h3>
+      <p>${feature.description}</p>
+    </div>
+  `).join('');
+  
   return `
-<div className="container mx-auto px-4 py-12">
-  <div className="text-center mb-12">
-    <h2 className="text-3xl font-bold mb-4">{heading || 'Our Features'}</h2>
-    <p className="text-xl max-w-2xl mx-auto">{subheading || 'Discover what makes our product special'}</p>
+<div class="container mx-auto px-4 py-12">
+  <div class="text-center mb-12">
+    <h2 class="text-3xl font-bold mb-4">${heading}</h2>
+    <p class="text-xl max-w-2xl mx-auto">${subheading}</p>
   </div>
   
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    {(() => {
-      // Safely parse features with error handling
-      let featuresData = [
-        {title: "Fast Performance", description: "Our platform is optimized for speed and efficiency."},
-        {title: "Easy to Use", description: "Intuitive interface designed for users of all skill levels."},
-        {title: "Responsive Design", description: "Works perfectly on all devices and screen sizes."},
-        {title: "24/7 Support", description: "Our team is always available to help with any issues."}
-      ];
-      
-      try {
-        if (typeof features === 'string' && features.startsWith('[')) {
-          const parsed = JSON.parse(features);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            featuresData = parsed;
-          }
-        } else if (features && typeof features === 'object' && Array.isArray(features)) {
-          featuresData = features;
-        }
-      } catch (e) {
-        console.error('Error parsing features:', e);
-      }
-      
-      return featuresData.map((feature, index) => (
-        <div key={index} className="p-6 border border-gray-200 rounded-lg">
-          <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-          <p>{feature.description}</p>
-        </div>
-      ));
-    })()}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    ${featuresHtml}
   </div>
 </div>
   `;
@@ -281,14 +336,14 @@ function renderFeatures({ heading = 'Our Features', subheading = 'Discover what 
 
 function renderAboutUs({ heading = 'About Our Company', content = 'Founded in 2020, our company has been at the forefront of innovation in our industry. We believe in creating value for our clients through quality service and cutting-edge solutions.', image = 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg' }) {
   return `
-<div class="container py-12">
-  <div style="display: flex; flex-direction: column; gap: 2rem;">
-    <div style="flex: 1;">
-      <img src="${image}" alt="About Us" style="border-radius: 0.5rem; width: 100%; height: auto; object-fit: cover;">
+<div class="container mx-auto px-4 py-12">
+  <div class="flex flex-col md:flex-row gap-8">
+    <div class="flex-1">
+      <img src="${image}" alt="About Us" class="rounded-lg w-full h-auto object-cover">
     </div>
-    <div style="flex: 1;">
-      <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">${heading}</h2>
-      <div style="font-size: 1.125rem;">
+    <div class="flex-1">
+      <h2 class="text-3xl font-bold mb-4">${heading}</h2>
+      <div class="text-lg">
         <p>${content}</p>
       </div>
     </div>
@@ -307,21 +362,21 @@ function renderTeam({ heading = 'Our Team', subheading = 'Meet the people behind
   }
   
   return `
-<div class="container py-12">
-  <div style="text-align: center; margin-bottom: 3rem;">
-    <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">${heading}</h2>
-    <p style="font-size: 1.25rem; max-width: 42rem; margin-left: auto; margin-right: auto;">${subheading}</p>
+<div class="container mx-auto px-4 py-12">
+  <div class="text-center mb-12">
+    <h2 class="text-3xl font-bold mb-4">${heading}</h2>
+    <p class="text-xl max-w-2xl mx-auto">${subheading}</p>
   </div>
   
-  <div class="grid grid-cols-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     ${membersArray.map((member: { name: string; role: string; bio: string; image: string }) => `
-      <div style="text-align: center;">
-        <div style="width: 8rem; height: 8rem; border-radius: 9999px; overflow: hidden; margin-left: auto; margin-right: auto; margin-bottom: 1rem;">
-          <img src="${member.image}" alt="${member.name}" style="width: 100%; height: 100%; object-fit: cover;">
+      <div class="text-center">
+        <div class="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4">
+          <img src="${member.image}" alt="${member.name}" class="w-full h-full object-cover">
         </div>
-        <h3 style="font-size: 1.25rem; font-weight: 600;">${member.name}</h3>
-        <p style="color: #6b7280; margin-bottom: 0.5rem;">${member.role}</p>
-        <p style="font-size: 0.875rem;">${member.bio}</p>
+        <h3 class="text-xl font-semibold">${member.name}</h3>
+        <p class="text-gray-500 mb-2">${member.role}</p>
+        <p class="text-sm">${member.bio}</p>
       </div>
     `).join('')}
   </div>
@@ -331,36 +386,36 @@ function renderTeam({ heading = 'Our Team', subheading = 'Meet the people behind
 
 function renderContactForm({ heading = 'Contact Us', subheading = 'We\'d love to hear from you. Fill out the form below and we\'ll get back to you as soon as possible.', submitText = 'Send Message' }) {
   return `
-<div class="container py-12">
-  <div style="max-width: 42rem; margin-left: auto; margin-right: auto;">
-    <div style="text-align: center; margin-bottom: 2rem;">
-      <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem;">${heading}</h2>
-      <p style="font-size: 1.125rem;">${subheading}</p>
+<div class="container mx-auto px-4 py-12">
+  <div class="max-w-2xl mx-auto">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold mb-4">${heading}</h2>
+      <p class="text-lg">${subheading}</p>
     </div>
     
-    <form style="display: flex; flex-direction: column; gap: 1.5rem;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <form class="flex flex-col gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label style="display: block; margin-bottom: 0.5rem;">Name</label>
-          <input type="text" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+          <label class="block mb-2">Name</label>
+          <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded">
         </div>
         <div>
-          <label style="display: block; margin-bottom: 0.5rem;">Email</label>
-          <input type="email" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+          <label class="block mb-2">Email</label>
+          <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded">
         </div>
       </div>
       
       <div>
-        <label style="display: block; margin-bottom: 0.5rem;">Subject</label>
-        <input type="text" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+        <label class="block mb-2">Subject</label>
+        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded">
       </div>
       
       <div>
-        <label style="display: block; margin-bottom: 0.5rem;">Message</label>
-        <textarea rows="5" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"></textarea>
+        <label class="block mb-2">Message</label>
+        <textarea rows="5" class="w-full px-3 py-2 border border-gray-300 rounded"></textarea>
       </div>
       
-      <button type="submit" class="btn" style="align-self: flex-start;">${submitText}</button>
+      <button type="submit" class="self-start px-6 py-3 bg-primary text-white rounded hover:opacity-90 transition-opacity">${submitText}</button>
     </form>
   </div>
 </div>
@@ -377,27 +432,27 @@ function renderContactInfo({ heading = 'Get in Touch', address = '123 Business S
   }
   
   return `
-<div class="container py-12">
-  <div style="max-width: 42rem; margin-left: auto; margin-right: auto;">
-    <h2 style="font-size: 1.875rem; font-weight: bold; margin-bottom: 1.5rem;">${heading}</h2>
+<div class="container mx-auto px-4 py-12">
+  <div class="max-w-2xl mx-auto">
+    <h2 class="text-3xl font-bold mb-6">${heading}</h2>
     
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div class="flex flex-col gap-6">
       <div>
-        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Address</h3>
+        <h3 class="text-xl font-semibold mb-2">Address</h3>
         <p>${address}</p>
       </div>
       
       <div>
-        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Contact Information</h3>
+        <h3 class="text-xl font-semibold mb-2">Contact Information</h3>
         <p>Email: ${email}</p>
         <p>Phone: ${phone}</p>
       </div>
       
       <div>
-        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Follow Us</h3>
-        <div style="display: flex; gap: 1rem;">
+        <h3 class="text-xl font-semibold mb-2">Follow Us</h3>
+        <div class="flex gap-4">
           ${socialLinksArray.map((link: { platform: string; url: string }) => `
-            <a href="${link.url}" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">${link.platform}</a>
+            <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="hover:opacity-70 transition-opacity">${link.platform}</a>
           `).join('')}
         </div>
       </div>
@@ -411,15 +466,15 @@ function renderSimpleFooter({ logo = 'WebCraft', links = 'Home, About, Services,
   const linkArray = links.split(',').map((link: string) => link.trim());
   
   return `
-<footer style="background-color: #f3f4f6; padding: 2rem 0;">
-  <div class="container">
-    <div style="display: flex; flex-direction: column; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-      <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;">${logo}</div>
-      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem;">
-        ${linkArray.map((link: string) => `<a href="#" style="text-decoration: none; margin-bottom: 0.5rem;">${link}</a>`).join('')}
+<footer class="bg-gray-100 py-8">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col items-center mb-8">
+      <div class="text-xl font-bold mb-4">${logo}</div>
+      <div class="flex flex-wrap justify-center gap-6 mb-4">
+        ${linkArray.map((link: string) => `<a href="#" class="hover:opacity-70 transition-opacity">${link}</a>`).join('')}
       </div>
     </div>
-    <div style="text-align: center; color: #6b7280;">
+    <div class="text-center text-gray-500">
       ${copyright}
     </div>
   </div>
@@ -437,21 +492,21 @@ function renderMultiColumnFooter({ logo = 'WebCraft', description = 'Creating be
   }
   
   return `
-<footer style="background-color: #f3f4f6; padding: 3rem 0;">
-  <div class="container">
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; margin-bottom: 2rem;">
+<footer class="bg-gray-100 py-12">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
       <div>
-        <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;">${logo}</div>
-        <p style="color: #6b7280;">${description}</p>
+        <div class="text-xl font-bold mb-4">${logo}</div>
+        <p class="text-gray-500">${description}</p>
       </div>
       
       ${columnsArray.map((column: { title: string; links: { label: string; url: string }[] }) => `
         <div>
-          <h3 style="font-weight: 600; margin-bottom: 1rem;">${column.title}</h3>
-          <ul style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <h3 class="font-semibold mb-4">${column.title}</h3>
+          <ul class="flex flex-col gap-2">
             ${column.links.map((link: { label: string; url: string }) => `
               <li>
-                <a href="${link.url}" style="text-decoration: none; color: #6b7280;">${link.label}</a>
+                <a href="${link.url}" class="text-gray-500 hover:opacity-70 transition-opacity">${link.label}</a>
               </li>
             `).join('')}
           </ul>
@@ -459,7 +514,7 @@ function renderMultiColumnFooter({ logo = 'WebCraft', description = 'Creating be
       `).join('')}
     </div>
     
-    <div style="border-top: 1px solid #d1d5db; padding-top: 1.5rem; text-align: center; color: #6b7280;">
+    <div class="border-t border-gray-300 pt-6 text-center text-gray-500">
       ${copyright}
     </div>
   </div>
@@ -493,6 +548,10 @@ function generateJsonParserCode(component: ComponentInstance): string {
 async function exportHtmlProject(components: ComponentInstance[], settings: ProjectSettings): Promise<void> {
   // Generate HTML and CSS
   const { html, css } = await buildHtmlFromComponents(components, settings);
+  
+  // Add a debugging console log for HTML content
+  console.log("Generated HTML export:");
+  console.log("Components included: ", components.map(c => c.type).join(', '));
   
   // Create a zip file with HTML, CSS, and assets
   const zip = new JSZip();
@@ -826,14 +885,16 @@ function generateComponentImplementation(type: string): string {
       return `<>
         {/* Direct component implementation */}
         <nav className="py-4">
-          <div className="container mx-auto px-4 flex justify-between items-center">
-            <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
-            <div className="flex space-x-6">
-              {(links || 'Home, About, Services, Contact').split(',').map((link, index) => (
-                <a key={index} href="#" className="hover:opacity-70 transition-opacity">
-                  {link.trim()}
-                </a>
-              ))}
+          <div className="container mx-auto px-4">
+            <div className="flex justify-between items-center">
+              <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
+              <div className="flex gap-6">
+                {(links || 'Home, About, Services, Contact').split(',').map((link, index) => (
+                  <a key={index} href="#" className="hover:opacity-70 transition-opacity">
+                    {link.trim()}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </nav>
@@ -843,17 +904,19 @@ function generateComponentImplementation(type: string): string {
       return `<>
         {/* Direct component implementation */}
         <nav className="py-4">
-          <div className="container mx-auto px-4 flex justify-between items-center">
-            <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
-            <div className="flex items-center space-x-6">
-              {(links || 'Home, About, Services, Contact').split(',').map((link, index) => (
-                <a key={index} href="#" className="hover:opacity-70 transition-opacity">
-                  {link.trim()}
-                </a>
-              ))}
-              <button className="px-4 py-2 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
-                {ctaText || 'Get Started'}
-              </button>
+          <div className="container mx-auto px-4">
+            <div className="flex justify-between items-center">
+              <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
+              <div className="flex items-center gap-6">
+                {(links || 'Home, About, Services, Contact').split(',').map((link, index) => (
+                  <a key={index} href="#" className="hover:opacity-70 transition-opacity">
+                    {link.trim()}
+                  </a>
+                ))}
+                <button className="px-4 py-2 bg-primary text-white rounded hover:opacity-90 transition-opacity">
+                  {ctaText || 'Get Started'}
+                </button>
+              </div>
             </div>
           </div>
         </nav>
@@ -870,7 +933,7 @@ function generateComponentImplementation(type: string): string {
           <div className="relative z-10 container mx-auto px-4 text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">{heading || 'Welcome to our website'}</h1>
             <p className="text-xl mb-8 max-w-2xl mx-auto">{subheading || 'A modern platform for your business needs'}</p>
-            <button className="px-6 py-3 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
+            <button className="px-6 py-3 bg-primary text-white rounded hover:opacity-90 transition-opacity">
               {ctaText || 'Get Started'}
             </button>
           </div>
@@ -881,11 +944,11 @@ function generateComponentImplementation(type: string): string {
       return `<>
         {/* Direct component implementation */}
         <div className="container mx-auto px-4 py-12">
-          <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h1 className="text-3xl md:text-4xl font-bold mb-4">{heading || 'Build your next project with us'}</h1>
               <p className="text-lg mb-6">{content || 'We provide the tools and expertise to help your business succeed in the digital world.'}</p>
-              <button className="px-6 py-3 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
+              <button className="px-6 py-3 bg-primary text-white rounded hover:opacity-90 transition-opacity">
                 {ctaText || 'Learn More'}
               </button>
             </div>
