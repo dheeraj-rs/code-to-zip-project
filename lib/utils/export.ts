@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import * as ComponentModules from '@/lib/components/component-modules';
 import { renderComponentAstro } from './export-astro';
-import { renderComponentNextJs } from './export-next';
+import { exportNextJsProject } from './export-next-clean';
 
 // Generate HTML content from components
 export async function buildHtmlFromComponents(
@@ -246,25 +246,25 @@ function renderFeatures({ heading = 'Our Features', subheading = 'Discover what 
   
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     {(() => {
-      // Handle features data
-      let featuresData = [];
+      // Safely parse features with error handling
+      let featuresData = [
+        {title: "Fast Performance", description: "Our platform is optimized for speed and efficiency."},
+        {title: "Easy to Use", description: "Intuitive interface designed for users of all skill levels."},
+        {title: "Responsive Design", description: "Works perfectly on all devices and screen sizes."},
+        {title: "24/7 Support", description: "Our team is always available to help with any issues."}
+      ];
+      
       try {
-        featuresData = typeof features === 'string' && features.startsWith('[') 
-          ? JSON.parse(features)
-          : features || [
-            {title: "Fast Performance", description: "Our platform is optimized for speed and efficiency."},
-            {title: "Easy to Use", description: "Intuitive interface designed for users of all skill levels."},
-            {title: "Responsive Design", description: "Works perfectly on all devices and screen sizes."},
-            {title: "24/7 Support", description: "Our team is always available to help with any issues."}
-          ];
+        if (typeof features === 'string' && features.startsWith('[')) {
+          const parsed = JSON.parse(features);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            featuresData = parsed;
+          }
+        } else if (features && typeof features === 'object' && Array.isArray(features)) {
+          featuresData = features;
+        }
       } catch (e) {
         console.error('Error parsing features:', e);
-        featuresData = [
-          {title: "Fast Performance", description: "Our platform is optimized for speed and efficiency."},
-          {title: "Easy to Use", description: "Intuitive interface designed for users of all skill levels."},
-          {title: "Responsive Design", description: "Works perfectly on all devices and screen sizes."},
-          {title: "24/7 Support", description: "Our team is always available to help with any issues."}
-        ];
       }
       
       return featuresData.map((feature, index) => (
@@ -489,441 +489,20 @@ function generateJsonParserCode(component: ComponentInstance): string {
   `).join('\n');
 }
 
-// Render component as direct JSX for Next.js
-function renderDirectComponent(type: string): string {
-  switch (type) {
-    case 'SimpleNavbar':
-      return `<nav className="py-4">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
-          <div className="flex space-x-6">
-            {(links || 'Home, About, Services, Contact').split(',').map((link) => (
-              <a key={link.trim()} href="#" className="hover:opacity-70 transition-opacity">
-                {link.trim()}
-              </a>
-            ))}
-          </div>
-        </div>
-      </nav>`;
-      
-    case 'HeroNavbar':
-      return `<nav className="py-4">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
-          <div className="flex items-center space-x-6">
-            {(links || 'Home, About, Services, Contact').split(',').map((link) => (
-              <a key={link.trim()} href="#" className="hover:opacity-70 transition-opacity">
-                {link.trim()}
-              </a>
-            ))}
-            <button className="px-4 py-2 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
-              {ctaText || 'Get Started'}
-            </button>
-          </div>
-        </div>
-      </nav>`;
-      
-    case 'SimpleHero':
-      return `<div 
-        className="relative h-[500px] flex items-center justify-center text-center bg-cover bg-center"
-        style={{ backgroundImage: \`url(\${backgroundImage || 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg'})\` }}
-      >
-        <div className="absolute inset-0 bg-black opacity-50"></div>
-        <div className="relative z-10 container mx-auto px-4 text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">{heading || 'Welcome to our website'}</h1>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">{subheading || 'A modern platform for your business needs'}</p>
-          <button className="px-6 py-3 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
-            {ctaText || 'Get Started'}
-          </button>
-        </div>
-      </div>`;
-    
-    // Add cases for other components as needed...
-    
-    default:
-      return `<p>Component rendering not implemented for {type}</p>`;
-  }
-}
-
-// Special case for SimpleNavbar to show implementation pattern
-function renderSimpleNavbarComponent(component: ComponentInstance): string {
-  const { props } = component;
-  return `<nav className="py-4">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="text-xl font-bold">{${props.logo ? `"${props.logo}"` : 'logo'} || 'WebCraft'}</div>
-          <div className="flex space-x-6">
-            {(${props.links ? `"${props.links}"` : 'links'} || 'Home, About, Services, Contact').split(',').map((link) => (
-              <a key={link.trim()} href="#" className="hover:opacity-70 transition-opacity">
-                {link.trim()}
-              </a>
-            ))}
-          </div>
-        </div>
-      </nav>`;
-}
-
-// Export project as Next.js
-async function exportNextJsProject(components: ComponentInstance[], settings: ProjectSettings): Promise<void> {
+// Export project as HTML
+async function exportHtmlProject(components: ComponentInstance[], settings: ProjectSettings): Promise<void> {
+  // Generate HTML and CSS
+  const { html, css } = await buildHtmlFromComponents(components, settings);
+  
+  // Create a zip file with HTML, CSS, and assets
   const zip = new JSZip();
-  
-  // Create project structure
-  zip.file("README.md", `# ${settings.title}
-
-${settings.description}
-
-## Features
-
-- Built with Next.js 13.5.6
-- Responsive design using Tailwind CSS
-- Fast performance with React 18
-- SEO optimized
-- Easy to customize
-
-## Getting Started
-
-\`\`\`bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm run start
-\`\`\`
-
-Built with WebCraft Website Builder
-  `);
-
-  zip.file("package.json", JSON.stringify({
-    name: settings.title.toLowerCase().replace(/\s+/g, '-'),
-    version: "1.0.0",
-    private: true,
-    scripts: {
-      dev: "next dev",
-      build: "next build",
-      start: "next start",
-      lint: "next lint"
-    },
-    dependencies: {
-      next: "13.5.6",
-      react: "^18.2.0",
-      "react-dom": "^18.2.0",
-      tailwindcss: "^3.3.5",
-      autoprefixer: "^10.4.16",
-      postcss: "^8.4.31"
-    },
-    devDependencies: {
-      typescript: "^5.2.2",
-      "@types/node": "^20.9.0",
-      "@types/react": "^18.2.37",
-      "@types/react-dom": "^18.2.15"
-    }
-  }, null, 2));
-  
-  // Create pages
-  const pagesDir = zip.folder("app");
-  pagesDir?.file("page.tsx", `
-import React from 'react';
-import { Metadata } from 'next';
-${components.map(component => `import ${component.type} from '@/components/${component.type}';`).join('\n')}
-
-export const metadata: Metadata = {
-  title: '${settings.title}',
-  description: '${settings.description}',
-  openGraph: {
-    title: '${settings.title}',
-    description: '${settings.description}',
-    url: 'https://yourdomain.com',
-    siteName: '${settings.title}',
-    images: [
-      {
-        url: 'https://yourdomain.com/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: '${settings.title}',
-      },
-    ],
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: '${settings.title}',
-    description: '${settings.description}',
-    images: ['https://yourdomain.com/og-image.jpg'],
-  },
-};
-
-export default function Home() {
-  ${generateComponentDataPreparation(components)}
-  
-  return (
-    <main>
-      ${components.map((component, idx) => {
-        return `<${component.type} 
-        key="${idx}"
-        backgroundColor="${component.props.backgroundColor || ''}"
-        textColor="${component.props.textColor || ''}"
-        padding="${component.props.padding || ''}"
-        ${Object.entries(component.props || {})
-          .filter(([key]) => !['backgroundColor', 'textColor', 'padding'].includes(key))
-          .map(([key, value]) => {
-            if (typeof value === 'string' && (value.startsWith('[') || value.startsWith('{'))) {
-              return `${key}={${key}Data${idx}}`;
-            } else if (typeof value === 'string') {
-              return `${key}="${value}"`;
-            }
-            return `${key}={${JSON.stringify(value)}}`;
-          })
-          .join('\n        ')}
-      />`;
-      }).join('\n      ')}
-    </main>
-  );
-}
-  `);
-  
-  pagesDir?.file("layout.tsx", `
-import './globals.css';
-import { Inter } from 'next/font/google';
-import type { Metadata } from 'next';
-
-const inter = Inter({ subsets: ['latin'] });
-
-export const metadata: Metadata = {
-  metadataBase: new URL('https://yourdomain.com'),
-  title: {
-    template: '%s | ${settings.title}',
-    default: '${settings.title}',
-  },
-  description: '${settings.description}',
-  icons: {
-    icon: '/favicon.ico',
-  },
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      </head>
-      <body className={inter.className}>{children}</body>
-    </html>
-  );
-}
-  `);
-  
-  pagesDir?.file("globals.css", `
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --primary-color: ${settings.primaryColor};
-  --secondary-color: ${settings.secondaryColor};
-}
-
-body {
-  font-family: ${settings.fontFamily || "'Inter', sans-serif"};
-  color: #333;
-  background-color: #fff;
-}
-
-@layer components {
-  .container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
-  }
-}
-  `);
-  
-  // Create components
-  const componentsDir = zip.folder("components");
-  
-  // Create a set to track which component types we've already created
-  const createdComponents = new Set();
-  
-  components.forEach((component) => {
-    // Only create one file per component type, with props
-    if (!createdComponents.has(component.type)) {
-      createdComponents.add(component.type);
-      
-      // Generate component based on its type
-      const componentImplementation = generateComponentImplementation(component.type);
-      
-      componentsDir?.file(`${component.type}.tsx`, `
-import React from 'react';
-
-// Define interface for component props
-interface ${component.type}Props {
-  backgroundColor?: string;
-  textColor?: string;
-  padding?: string;
-  ${Object.keys(component.props || {})
-    .filter(key => !['backgroundColor', 'textColor', 'padding'].includes(key))
-    .map(propKey => {
-      return `${propKey}?: string;`;
-    }).join('\n  ')}
-}
-
-export default function ${component.type}({ 
-  backgroundColor,
-  textColor,
-  padding,
-  ${Object.keys(component.props || {})
-    .filter(key => !['backgroundColor', 'textColor', 'padding'].includes(key))
-    .join(',\n  ')}
-}: ${component.type}Props) {
-  return (
-    <div 
-      style={{
-        backgroundColor: backgroundColor || undefined,
-        color: textColor || undefined,
-        padding: padding || undefined
-      }}
-    >
-      ${componentImplementation}
-    </div>
-  );
-}
-    `);
-    }
-  });
-  
-  // Create tailwind config
-  zip.file("tailwind.config.js", `
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        primary: 'var(--primary-color)',
-        secondary: 'var(--secondary-color)',
-      },
-      fontFamily: {
-        sans: ['${settings.fontFamily || "Inter"}', 'sans-serif'],
-      },
-    },
-  },
-  plugins: [],
-}
-  `);
-  
-  // Also add postcss.config.js file
-  zip.file("postcss.config.js", `
-module.exports = {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
-}
-  `);
-  
-  // Create next.config.js
-  zip.file("next.config.js", `
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-}
-
-module.exports = nextConfig
-  `);
-  
-  // Create tsconfig
-  zip.file("tsconfig.json", `
-{
-  "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": ["./*"]
-    }
-  },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
-}
-  `);
-  
-  // Create public folder with favicon and og image
-  const publicDir = zip.folder("public");
-  publicDir?.file("favicon.ico", "", { base64: true });
-  publicDir?.file("og-image.jpg", "", { base64: true });
-  
-  // Create a .env.local.example file
-  zip.file(".env.local.example", `# Environment variables
-NEXT_PUBLIC_SITE_URL=https://yourdomain.com
-`);
-  
-  // Create a .gitignore file
-  zip.file(".gitignore", `# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# env files
-.env*.local
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-`);
+  zip.file("index.html", html);
+  zip.file("styles.css", css);
+  zip.file("favicon.ico", "", { base64: true });
   
   // Generate and download the zip file
   const zipContent = await zip.generateAsync({ type: "blob" });
-  saveAs(zipContent, `${settings.title.toLowerCase().replace(/\s+/g, '-')}-nextjs.zip`);
+  saveAs(zipContent, `${settings.title.toLowerCase().replace(/\s+/g, '-')}-html.zip`);
 }
 
 // Export project as Astro
@@ -987,11 +566,9 @@ Built with WebCraft Website Builder
   const pagesDir = zip.folder("src/pages");
   pagesDir?.file("index.astro", `---
 import Layout from '../layouts/Layout.astro';
-${components.map((component, index) => {
-  // Use component type name instead of generic Component1, Component2, etc.
-  const componentName = component.type;
-  return `import ${componentName} from '../components/${componentName}.astro';`;
-}).join('\n')}
+${Array.from(new Set(components.map(component => component.type)))
+  .map(type => `import ${type} from '../components/${type}.astro';`)
+  .join('\n')}
 
 const title = "${settings.title}";
 const description = "${settings.description}";
@@ -1093,9 +670,6 @@ const { title, description } = Astro.props;
     // Only create one file per component type, with props
     if (!createdComponents.has(component.type)) {
       createdComponents.add(component.type);
-      
-      // Generate component based on its type
-      const componentImplementation = generateComponentImplementation(component.type);
       
       componentsDir?.file(`${component.type}.astro`, `---
 interface Props {
@@ -1224,22 +798,6 @@ next-env.d.ts
   saveAs(zipContent, `${settings.title.toLowerCase().replace(/\s+/g, '-')}-astro.zip`);
 }
 
-// Export project as HTML
-async function exportHtmlProject(components: ComponentInstance[], settings: ProjectSettings): Promise<void> {
-  // Generate HTML and CSS
-  const { html, css } = await buildHtmlFromComponents(components, settings);
-  
-  // Create a zip file with HTML, CSS, and assets
-  const zip = new JSZip();
-  zip.file("index.html", html);
-  zip.file("styles.css", css);
-  zip.file("favicon.ico", "", { base64: true });
-  
-  // Generate and download the zip file
-  const zipContent = await zip.generateAsync({ type: "blob" });
-  saveAs(zipContent, `${settings.title.toLowerCase().replace(/\s+/g, '-')}-html.zip`);
-}
-
 // Main export function
 export async function exportProject(
   format: 'next' | 'astro' | 'html',
@@ -1265,139 +823,142 @@ export async function exportProject(
 function generateComponentImplementation(type: string): string {
   switch (type) {
     case 'SimpleNavbar':
-      return `<nav className="py-4">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
-          <div className="flex space-x-6">
-            {(links || 'Home, About, Services, Contact').split(',').map((link, index) => (
-              <a key={index} href="#" className="hover:opacity-70 transition-opacity">
-                {link.trim()}
-              </a>
-            ))}
+      return `<>
+        {/* Direct component implementation */}
+        <nav className="py-4">
+          <div className="container mx-auto px-4 flex justify-between items-center">
+            <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
+            <div className="flex space-x-6">
+              {(links || 'Home, About, Services, Contact').split(',').map((link, index) => (
+                <a key={index} href="#" className="hover:opacity-70 transition-opacity">
+                  {link.trim()}
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
-      </nav>`;
+        </nav>
+      </>`;
     
     case 'HeroNavbar':
-      return `<nav className="py-4">
-        <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
-          <div className="flex items-center space-x-6">
-            {(links || 'Home, About, Services, Contact').split(',').map((link, index) => (
-              <a key={index} href="#" className="hover:opacity-70 transition-opacity">
-                {link.trim()}
-              </a>
-            ))}
-            <button className="px-4 py-2 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
+      return `<>
+        {/* Direct component implementation */}
+        <nav className="py-4">
+          <div className="container mx-auto px-4 flex justify-between items-center">
+            <div className="text-xl font-bold">{logo || 'WebCraft'}</div>
+            <div className="flex items-center space-x-6">
+              {(links || 'Home, About, Services, Contact').split(',').map((link, index) => (
+                <a key={index} href="#" className="hover:opacity-70 transition-opacity">
+                  {link.trim()}
+                </a>
+              ))}
+              <button className="px-4 py-2 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
+                {ctaText || 'Get Started'}
+              </button>
+            </div>
+          </div>
+        </nav>
+      </>`;
+    
+    case 'SimpleHero':
+      return `<>
+        {/* Direct component implementation */}
+        <div 
+          className="relative h-[500px] flex items-center justify-center text-center bg-cover bg-center"
+          style={{ backgroundImage: \`url(\${backgroundImage || 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg'})\` }}
+        >
+          <div className="absolute inset-0 bg-black opacity-50"></div>
+          <div className="relative z-10 container mx-auto px-4 text-white">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">{heading || 'Welcome to our website'}</h1>
+            <p className="text-xl mb-8 max-w-2xl mx-auto">{subheading || 'A modern platform for your business needs'}</p>
+            <button className="px-6 py-3 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
               {ctaText || 'Get Started'}
             </button>
           </div>
         </div>
-      </nav>`;
-    
-    case 'SimpleHero':
-      return `<div 
-        className="relative h-[500px] flex items-center justify-center text-center bg-cover bg-center"
-        style={{ backgroundImage: \`url(\${backgroundImage || 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg'})\` }}
-      >
-        <div className="absolute inset-0 bg-black opacity-50"></div>
-        <div className="relative z-10 container mx-auto px-4 text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">{heading || 'Welcome to our website'}</h1>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">{subheading || 'A modern platform for your business needs'}</p>
-          <button className="px-6 py-3 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
-            {ctaText || 'Get Started'}
-          </button>
-        </div>
-      </div>`;
+      </>`;
     
     case 'SplitHero':
-      return `<div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col md:flex-row items-center gap-8">
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">{heading || 'Build your next project with us'}</h1>
-            <p className="text-lg mb-6">{content || 'We provide the tools and expertise to help your business succeed in the digital world.'}</p>
-            <button className="px-6 py-3 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
-              {ctaText || 'Learn More'}
-            </button>
-          </div>
-          <div className="flex-1">
-            <img 
-              src={image || 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg'} 
-              alt="Hero" 
-              className="rounded-lg w-full h-auto object-cover"
-            />
+      return `<>
+        {/* Direct component implementation */}
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">{heading || 'Build your next project with us'}</h1>
+              <p className="text-lg mb-6">{content || 'We provide the tools and expertise to help your business succeed in the digital world.'}</p>
+              <button className="px-6 py-3 bg-primary text-white rounded-md hover:opacity-90 transition-opacity">
+                {ctaText || 'Learn More'}
+              </button>
+            </div>
+            <div className="flex-1">
+              <img 
+                src={image || 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg'} 
+                alt="Hero" 
+                className="rounded-lg w-full h-auto object-cover"
+              />
+            </div>
           </div>
         </div>
-      </div>`;
+      </>`;
     
     case 'TextBlock':
-      return `<div className="container mx-auto px-4 py-12">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold mb-4">{heading || 'Our Mission'}</h2>
-          <div className="text-lg">
-            <p>{content || 'We are dedicated to providing the best service and solutions for our clients. Our team of experts works tirelessly to ensure your satisfaction and success.'}</p>
+      return `<>
+        {/* Direct component implementation */}
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4">{heading || 'Our Mission'}</h2>
+            <div className="text-lg">
+              <p>{content || 'We are dedicated to providing the best service and solutions for our clients. Our team of experts works tirelessly to ensure your satisfaction and success.'}</p>
+            </div>
           </div>
         </div>
-      </div>`;
+      </>`;
     
     case 'Features':
-      return `<div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">{heading || 'Our Features'}</h2>
-          <p className="text-xl max-w-2xl mx-auto">{subheading || 'Discover what makes our product special'}</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {(() => {
-            // Handle features data
-            let featuresData = [];
-            try {
-              featuresData = typeof features === 'string' && features.startsWith('[') 
-                ? JSON.parse(features)
-                : features || [
-                  {title: "Fast Performance", description: "Our platform is optimized for speed and efficiency."},
-                  {title: "Easy to Use", description: "Intuitive interface designed for users of all skill levels."},
-                  {title: "Responsive Design", description: "Works perfectly on all devices and screen sizes."},
-                  {title: "24/7 Support", description: "Our team is always available to help with any issues."}
-                ];
-            } catch (e) {
-              console.error('Error parsing features:', e);
-              featuresData = [
+      return `<>
+        {/* Direct component implementation */}
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">{heading || 'Our Features'}</h2>
+            <p className="text-xl max-w-2xl mx-auto">{subheading || 'Discover what makes our product special'}</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {(() => {
+              // Safely parse features with error handling
+              let featuresData = [
                 {title: "Fast Performance", description: "Our platform is optimized for speed and efficiency."},
                 {title: "Easy to Use", description: "Intuitive interface designed for users of all skill levels."},
                 {title: "Responsive Design", description: "Works perfectly on all devices and screen sizes."},
                 {title: "24/7 Support", description: "Our team is always available to help with any issues."}
               ];
-            }
-            
-            return featuresData.map((feature, index) => (
-              <div key={index} className="p-6 border border-gray-200 rounded-lg">
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                <p>{feature.description}</p>
-              </div>
-            ));
-          })()}
+              
+              try {
+                if (typeof features === 'string' && features.startsWith('[')) {
+                  const parsed = JSON.parse(features);
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    featuresData = parsed;
+                  }
+                } else if (features && typeof features === 'object' && Array.isArray(features)) {
+                  featuresData = features;
+                }
+              } catch (e) {
+                console.error('Error parsing features:', e);
+              }
+              
+              return featuresData.map((feature, index) => (
+                <div key={index} className="p-6 border border-gray-200 rounded-lg">
+                  <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                  <p>{feature.description}</p>
+                </div>
+              ));
+            })()}
+          </div>
         </div>
-      </div>`;
+      </>`;
     
     // Add other components as needed
     
     default:
       return `<div>Component rendering for ${type} not implemented yet.</div>`;
   }
-}
-
-// Helper function to generate React data preparation code
-function generateComponentDataPreparation(components: ComponentInstance[]): string {
-  let code = '';
-  
-  components.forEach((component, idx) => {
-    Object.entries(component.props || {}).forEach(([key, value]) => {
-      if (typeof value === 'string' && (value.startsWith('[') || value.startsWith('{'))) {
-        code += `const ${key}Data${idx} = ${value};\n  `;
-      }
-    });
-  });
-  
-  return code;
 }
